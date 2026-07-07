@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volna Sales Assistant</title>
+<style>
+  :root{
+    --bg:#0B1626; --panel:#121F33; --panel2:#182A44; --line:#24405F;
+    --cyan:#39C6D6; --cyandim:#1E7C88; --amber:#F5B942; --red:#E86A6A;
+    --green:#5DC98A; --text:#E8EEF6; --mut:#8CA0B8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;
+    background:radial-gradient(1200px 500px at 70% -10%, #10263F 0%, var(--bg) 55%);}
+  header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+    padding:14px 22px;border-bottom:1px solid var(--line)}
+  .logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800}
+  .logo b{color:var(--cyan);font-weight:800}
+  .wave{display:inline-flex;align-items:flex-end;gap:2px;height:16px}
+  .wave i{width:3px;height:4px;border-radius:2px;background:var(--line)}
+  .wave.on i{background:var(--cyan);animation:wv 1s ease-in-out infinite}
+  .wave.on i:nth-child(2){animation-delay:.15s}.wave.on i:nth-child(3){animation-delay:.3s}
+  .wave.on i:nth-child(4){animation-delay:.45s}.wave.on i:nth-child(5){animation-delay:.6s}
+  @keyframes wv{0%,100%{height:4px}50%{height:16px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{background:transparent;color:var(--mut);border:none;border-radius:8px;
+    padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer}
+  nav button.act{background:var(--panel2);color:var(--cyan)}
+  main{padding:20px;max-width:1250px;margin:0 auto}
+  .grid2{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1.1fr);gap:18px}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+  .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:8px;font-weight:600}
+  .btn{background:var(--cyan);color:#06222A;border:none;border-radius:8px;padding:10px 18px;
+    font-size:14px;font-weight:700;cursor:pointer}
+  .btn.red{background:var(--red);color:#2A0808}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  #transcript{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px;height:240px;overflow-y:auto;line-height:1.55}
+  #transcript .m{margin-bottom:7px}
+  #transcript .src{color:var(--cyan);margin-right:6px}
+  #transcript .src.man{color:var(--amber)}
+  #interim{color:var(--mut);font-style:italic}
+  /* сценарий */
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .step{flex:1;min-width:90px;text-align:center;font-size:12px;padding:8px 6px;border-radius:8px;
+    border:1px solid var(--line);color:var(--mut);cursor:pointer;background:var(--panel);font-weight:600}
+  .step.cur{border-color:var(--cyan);color:var(--cyan);background:rgba(57,198,214,.1)}
+  .step.done{color:var(--green);border-color:var(--green)}
+  .scenario{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .phrasecard{background:var(--bg);border-left:3px solid var(--cyan);border-radius:6px;
+    padding:10px 12px;margin-bottom:8px;cursor:pointer;line-height:1.5;transition:opacity .15s}
+  .phrasecard:hover{border-left-color:var(--amber)}
+  .phrasecard.used{opacity:.42;border-left-color:var(--green)}
+  .phrasecard.used::after{content:" ✓";color:var(--green);font-weight:700}
+  .qitem{display:flex;align-items:flex-start;gap:9px;padding:7px 4px;cursor:pointer;line-height:1.45;border-radius:6px}
+  .qitem:hover{background:var(--panel2)}
+  .qitem input{margin-top:3px}
+  .qitem.done span{opacity:.45;text-decoration:line-through}
+  .tarmini{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  .tarmini b{font-size:15px}
+  .tarmini .price{float:right}
+  .modal{display:none;position:fixed;inset:0;background:rgba(4,10,20,.72);z-index:50;align-items:center;justify-content:center;padding:20px}
+  .modal.open{display:flex}
+  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;width:100%;max-width:740px;max-height:88vh;display:flex;flex-direction:column}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--cyandim);color:var(--cyan)}
+  .chip.on{border-color:var(--cyan);color:var(--cyan);background:rgba(57,198,214,.1);font-weight:700}
+  .sel{background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px;font-family:inherit}
+  .hintcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    line-height:1.55;margin-bottom:10px}
+  .hintcard.top{background:rgba(245,185,66,.08);border-color:var(--amber)}
+  .hintcard .tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);
+    margin-bottom:6px;font-weight:700}
+  .hintcard.top .tag{color:var(--amber)}
+  .phrase{background:var(--bg);border-left:3px solid var(--cyan);border-radius:6px;
+    padding:8px 12px;font-style:italic;margin:8px 0 0}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:20px;
+    padding:7px 14px;font-size:13px;cursor:pointer}
+  input[type=text],textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:9px 12px;font-size:14px;outline:none;font-family:inherit;resize:vertical;line-height:1.5}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+  .form{display:grid;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .err{background:rgba(232,106,106,.12);border:1px solid var(--red);border-radius:8px;
+    padding:10px 14px;margin-bottom:12px;display:none}
+  .note{background:rgba(245,185,66,.08);border:1px solid var(--amber);border-radius:12px;padding:14px}
+  .muted{color:var(--mut)}
+  .summary{background:var(--panel);border:1px solid var(--cyandim);border-radius:12px;padding:16px;margin-top:14px;display:none;line-height:1.6}
+  .summary b{color:var(--cyan)}
+  ol{margin:10px 0 0;padding-left:20px;line-height:1.65}
+  section{display:none}section.act{display:block}
+  .price{color:var(--cyan);font-weight:800;white-space:nowrap}
+  .saved{color:var(--green);font-size:12px;margin-left:8px;opacity:0;transition:opacity .3s}
+  .saved.show{opacity:1}
+  #hints{max-height:340px;overflow-y:auto}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i></span>
+    Volna <b>Sales Assistant</b></div>
+  <nav>
+    <button data-tab="call" class="act">Звонок</button>
+    <button data-tab="script">Скрипт</button>
+    <button data-tab="tariffs">Тарифы</button>
+    <button data-tab="objections">Возражения</button>
+    <button data-tab="sound">Настройка звука</button>
+    <button data-tab="ai">AI-режим</button>
+  </nav>
+</header>
+
+<main>
+<!-- ═══ ЗВОНОК ═══ -->
+<section id="tab-call" class="act">
+  <div class="grid2">
+    <div>
+      <div class="row">
+        <button class="btn" id="btnStart">▶ Начать звонок</button>
+        <button class="btn ghost" id="btnSummary" disabled>Завершить + итог</button>
+        <button class="btn ghost" id="btnNew">Новый звонок</button>
+        <button class="btn ghost sm" id="btnAIHint">💡 AI</button>
+        <button class="btn ghost sm" id="btnCatalog">📚 Каталог</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);cursor:pointer"><input type="checkbox" id="autoHints" checked> AI-автоподсказки</label>
+        <span class="muted" id="thinking" style="display:none;font-size:12px">анализирую…</span>
+      </div>
+      <div class="err" id="micErr"></div>
+      <div class="lbl">Транскрипция</div>
+      <div id="transcript"><div class="muted" id="placeholder">Нажмите «Начать звонок» — распознавание идёт на русском в реальном времени. Сценарий справа проведёт вас по всем этапам: от приветствия до закрытия сделки.</div><div id="lines"></div><div id="interim"></div></div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="manualIn" placeholder="Ручной ввод: впишите реплику клиента и нажмите +" style="flex:1">
+        <button class="btn sm" id="btnManual">+</button>
+      </div>
+      <div class="lbl" style="margin-top:12px">Быстрые возражения</div>
+      <div class="chips" id="objChips"></div>
+      <div class="lbl" style="margin-top:14px">Сработавшие подсказки</div>
+      <div id="hints">
+        <div class="hintcard muted" id="hintsEmpty" style="border-style:dashed">
+          Приложение слушает диалог: услышав возражение или потребность клиента (по вашим ключевым словам),
+          мгновенно покажет здесь отработку или подходящий тариф.
+        </div>
+      </div>
+      <div class="summary" id="summaryBox"></div>
+    </div>
+
+    <!-- сценарий -->
+    <div>
+      <div class="lbl">Сценарий звонка</div>
+      <div class="steps" id="steps"></div>
+      <div class="scenario" id="scenario"></div>
+      <div class="row" style="margin:0">
+        <button class="btn ghost sm" id="stPrev">← Назад</button>
+        <button class="btn sm" id="stNext">Следующий этап →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ СКРИПТ ═══ -->
+<section id="tab-script">
+  <div style="max-width:820px">
+    <div class="lbl">Скрипт продаж — ваши формулировки для каждого этапа</div>
+    <p class="muted" style="margin-top:0">Каждая строка — отдельная фраза или вопрос: во время звонка они появятся карточками на соответствующем этапе. Пишите своими словами, как реально говорите с клиентами. Сохраняется автоматически.</p>
+
+    <div class="card">
+      <b style="color:var(--cyan)">1. Приветствие</b>
+      <div class="muted" style="font-size:13px;margin:4px 0 8px">Варианты, как вы начинаете разговор.</div>
+      <textarea id="sc_greeting" rows="4"></textarea><span class="saved" id="sv_greeting">сохранено ✓</span>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">2. Выявление потребностей</b>
+      <div class="muted" style="font-size:13px;margin:4px 0 8px">Вопросы клиенту — на этапе они превратятся в чек-лист, отмечайте заданные.</div>
+      <textarea id="sc_needs" rows="6"></textarea><span class="saved" id="sv_needs">сохранено ✓</span>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">3. Презентация</b>
+      <div class="muted" style="font-size:13px;margin:4px 0 8px">Фразы-переходы к предложению. Сами тарифы подтянутся из вкладки «Тарифы».</div>
+      <textarea id="sc_present" rows="4"></textarea><span class="saved" id="sv_present">сохранено ✓</span>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">4. Возражения</b>
+      <div class="muted" style="font-size:13px;margin:4px 0 8px">Настраиваются во вкладке «Возражения» (возражение + ключевые слова + отработка). На этапе появятся кнопками.</div>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">5. Закрытие сделки</b>
+      <div class="muted" style="font-size:13px;margin:4px 0 8px">Фразы, которыми вы подводите к оформлению.</div>
+      <textarea id="sc_closing" rows="4"></textarea><span class="saved" id="sv_closing">сохранено ✓</span>
+    </div>
+    <button class="btn ghost sm" id="scriptReset">Вернуть стандартный скрипт</button>
+  </div>
+</section>
+
+<!-- ═══ ТАРИФЫ ═══ -->
+<section id="tab-tariffs">
+  <div class="grid2">
+    <div>
+      <div class="lbl">Тарифы Volna</div>
+      <p class="muted" style="margin-top:0">Каталог с фильтрами доступен и во время звонка — кнопка «📚 Каталог». По ключевым словам из поля «Для кого» суфлёр сам подсказывает тариф.</p>
+      <div class="row" style="margin:0 0 10px">
+        <input type="text" id="ctSearch" placeholder="Поиск: название, ГБ, ТВ, цена…" style="flex:1">
+        <select id="ctSort" class="sel">
+          <option value="none">Без сортировки</option>
+          <option value="asc">Цена: сначала дешёвые</option>
+          <option value="desc">Цена: сначала дорогие</option>
+        </select>
+      </div>
+      <div class="chips" id="ctBar" style="margin-bottom:12px"></div>
+      <div id="tariffList"></div>
+    </div>
+    <div>
+      <div class="lbl" id="tariffFormTitle">Добавить тариф</div>
+      <div class="form">
+        <input type="text" id="tf_category" list="catList" placeholder="Категория: Мобильная связь, Домашний интернет…">
+        <datalist id="catList"></datalist>
+        <input type="text" id="tf_name" placeholder="Название (например, Волна M)">
+        <input type="text" id="tf_price" placeholder="Цена (например, 550 ₽/мес)">
+        <textarea id="tf_details" rows="2" placeholder="Что входит: минуты, ГБ, ТВ…"></textarea>
+        <textarea id="tf_audience" rows="2" placeholder="Для кого + ключевые слова: интернет, семья, дёшево…"></textarea>
+        <textarea id="tf_pitch" rows="2" placeholder="Ключевой аргумент для продажи"></textarea>
+        <div class="row" style="margin:0">
+          <button class="btn" id="tariffSave">Добавить</button>
+          <button class="btn ghost" id="tariffCancel" style="display:none">Отмена</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <b style="color:var(--cyan)">Резервная копия</b>
+        <div class="muted" style="font-size:13px;margin:4px 0 10px">Скачайте файл со всеми настройками (тарифы, возражения, скрипт) — восстановите одной кнопкой после чистки браузера или на другом ПК. API-ключ в файл не попадает.</div>
+        <div class="row" style="margin:0">
+          <button class="btn sm" id="btnExport">⬇ Экспорт настроек</button>
+          <button class="btn ghost sm" id="btnImport">⬆ Импорт</button>
+          <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ВОЗРАЖЕНИЯ ═══ -->
+<section id="tab-objections">
+  <div class="grid2">
+    <div>
+      <div class="lbl">База возражений</div>
+      <p class="muted" style="margin-top:0">В поле «ключевые слова» перечислите через запятую фразы, по которым суфлёр узнает возражение в речи клиента.</p>
+      <div id="objList"></div>
+    </div>
+    <div>
+      <div class="lbl" id="objFormTitle">Добавить возражение</div>
+      <div class="form">
+        <input type="text" id="of_trigger" placeholder="Возражение (например, «Дорого»)">
+        <input type="text" id="of_keys" placeholder="Ключевые слова через запятую: дорого, дешевле, цена">
+        <textarea id="of_answer" rows="3" placeholder="Как отрабатываем"></textarea>
+        <div class="row" style="margin:0">
+          <button class="btn" id="objSave">Добавить</button>
+          <button class="btn ghost" id="objCancel" style="display:none">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ НАСТРОЙКА ЗВУКА ═══ -->
+<section id="tab-sound">
+  <div style="max-width:760px;line-height:1.65">
+    <div class="lbl">Как сделать так, чтобы приложение слышало весь разговор</div>
+    <p class="muted" style="margin-top:0">Распознавание слушает <b style="color:var(--text)">микрофон</b>. Чтобы оно слышало и клиента из софтфона, звук ПК «заворачивается» в виртуальный микрофон:</p>
+    <div class="card">
+      <b style="color:var(--cyan)">VB-CABLE (виртуальный кабель)</b>
+      <ol>
+        <li>Скачайте с <b>vb-audio.com/Cable</b>, установите от имени администратора, перезагрузите ПК.</li>
+        <li>Выведите звук софтфона (или всего ПК) на <b>CABLE Input</b>.</li>
+        <li>Чтобы слышать клиента самому: вкладка «Запись» → <b>CABLE Output</b> → Свойства → «Прослушать» → галочка «Прослушивать с данного устройства» → выберите свои наушники.</li>
+        <li>В Chrome выберите микрофон <b>CABLE Output</b> (Настройки → Настройки сайтов → Микрофон).</li>
+      </ol>
+      <div class="muted" style="margin-top:6px">Чтобы в транскрипцию попадал ещё и ваш голос с гарнитуры — поставьте бесплатный Voicemeeter (тот же сайт): он смешивает микрофон и звук ПК.</div>
+    </div>
+    <div class="note">⚠️ Транскрибация — форма записи разговора. Убедитесь, что клиенты уведомляются о записи («разговор может быть записан»), и согласуйте инструмент с руководителем.</div>
+  </div>
+</section>
+
+<!-- ═══ AI-РЕЖИМ ═══ -->
+<section id="tab-ai">
+  <div style="max-width:760px;line-height:1.65">
+    <div class="lbl">AI-режим (опционально)</div>
+    <p class="muted" style="margin-top:0">Без ключа работает локальный суфлёр по ключевым словам — бесплатно и без лимитов. С ключом добавляются умные AI-подсказки по ходу диалога (следуют вашему скрипту) и развёрнутый AI-разбор звонка.</p>
+    <div class="card">
+      <b style="color:var(--green)">GigaChat (Сбер) — бесплатно, доступен в РФ</b>
+      <ol>
+        <li>Зайдите на <b>developers.sber.ru</b> → войдите через Сбер ID.</li>
+        <li>«Мои проекты» → «Создать проект» → выберите <b>GigaChat API</b> (тариф для физлиц, Freemium).</li>
+        <li>В проекте нажмите «Сгенерировать ключ» и скопируйте <b>Ключ авторизации</b> (длинная строка).</li>
+        <li>Вставьте его ниже, провайдер «GigaChat», нажмите «Сохранить».</li>
+      </ol>
+      <div class="muted" style="margin-top:6px">Бесплатно даётся 1 млн токенов (~1000 подсказок) без привязки карты, дальше пакеты от ~1300 ₽ за 20 млн. Работает только на сайте (версия на Netlify), не из локального файла.</div>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">Google Gemini — бесплатно, но недоступен в подсанкционных регионах</b>
+      <div class="muted" style="margin-top:4px">Ключ создаётся на aistudio.google.com без карты. Если сайт пишет про санкции — используйте GigaChat выше.</div>
+    </div>
+    <div class="card">
+      <b style="color:var(--cyan)">Anthropic Claude — платно, качество подсказок выше</b>
+      <div class="muted" style="margin-top:4px">Ключ создаётся на console.anthropic.com (нужен баланс). Также недоступен в подсанкционных регионах.</div>
+    </div>
+    <div class="card">
+      <b style="color:var(--green)">Локальная нейросеть (Ollama) — бесплатно, без интернета, без лимитов и ключей</b>
+      <div class="muted" style="font-size:13px;margin-top:4px">Модель работает прямо на вашем ПК, данные никуда не отправляются. Нужно 8+ ГБ оперативной памяти; на слабом ПК ответы медленнее (несколько секунд). Качество подсказок ниже, чем у GigaChat/Claude, но для суфлёра достаточно.</div>
+      <ol>
+        <li>Скачайте Ollama с <b>ollama.com</b> (Download → Windows), установите.</li>
+        <li>Откройте командную строку (Win+R → введите <b>cmd</b> → Enter) и выполните: <b>ollama pull qwen2.5:7b-instruct</b> — скачается модель ~4,7 ГБ. Для слабого ПК: <b>ollama pull qwen2.5:3b-instruct</b>.</li>
+        <li>Разрешите сайту обращаться к Ollama: там же выполните <b>setx OLLAMA_ORIGINS "*"</b> и полностью перезапустите Ollama (значок в трее → Quit, затем запустить снова).</li>
+        <li>Выберите ниже провайдера «Локальная нейросеть», проверьте название модели, нажмите «Сохранить». Ключ не нужен.</li>
+      </ol>
+    </div>
+    <div class="form" style="max-width:560px">
+      <select id="aiProvider" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:9px 12px;font-size:14px;font-family:inherit">
+        <option value="gigachat">GigaChat / Сбер (бесплатно)</option>
+        <option value="gemini">Google Gemini (бесплатно)</option>
+        <option value="anthropic">Anthropic Claude (платно)</option>
+        <option value="local">Локальная нейросеть / Ollama (бесплатно, без интернета)</option>
+      </select>
+      <input type="text" id="apiKey" placeholder="Вставьте ключ авторизации / API-ключ">
+      <input type="text" id="localModel" placeholder="Модель Ollama, например qwen2.5:7b-instruct" style="display:none">
+      <div class="row" style="margin:0">
+        <button class="btn" id="keySave">Сохранить</button>
+        <button class="btn ghost" id="keyClear">Удалить ключ</button>
+      </div>
+      <div class="muted" id="keyStatus"></div>
+    </div>
+    <div class="muted" style="margin-top:10px;font-size:13px">Ключ хранится только в вашем браузере. На бесплатных тарифах облачные провайдеры могут использовать запросы для улучшения своих моделей — не проговаривайте в звонках паспортные и платёжные данные клиентов. Локальная нейросеть данные не отправляет вообще.</div>
+  </div>
+</section>
+
+<!-- ═══ МОДАЛЬНОЕ ОКНО КАТАЛОГА ═══ -->
+<div class="modal" id="catModal">
+  <div class="modalbox">
+    <div class="row" style="margin:0 0 10px">
+      <b style="font-size:16px;white-space:nowrap">📚 Каталог тарифов</b>
+      <input type="text" id="cmSearch" placeholder="Поиск: название, ГБ, ТВ, цена…" style="flex:1;min-width:140px">
+      <select id="cmSort" class="sel">
+        <option value="none">Без сортировки</option>
+        <option value="asc">Цена ↑</option>
+        <option value="desc">Цена ↓</option>
+      </select>
+      <button class="btn ghost sm" id="cmClose">✕</button>
+    </div>
+    <div class="chips" id="cmBar" style="margin-bottom:10px"></div>
+    <div id="cmList" style="overflow-y:auto"></div>
+  </div>
+</div>
+</main>
+
+<script>
+"use strict";
+// ───────── данные по умолчанию ─────────
+const DEF_TARIFFS=[
+ {id:"t1",category:"Мобильная связь",name:"Волна S",price:"350 ₽/мес",details:"300 минут, 15 ГБ, безлимит на мессенджеры",
+  audience:"экономия, дёшево, недорого, пенсионер, второй номер, мало пользуюсь",
+  pitch:"Самый доступный тариф — всё нужное для связи без переплат"},
+ {id:"t2",category:"Мобильная связь",name:"Волна M",price:"550 ₽/мес",details:"600 минут, 35 ГБ, безлимит соцсети и мессенджеры",
+  audience:"соцсети, интернет, средний, оптимальный, звонки и интернет",
+  pitch:"Оптимальный баланс цены и объёма — хватает на всё"},
+ {id:"t3",category:"Мобильная связь",name:"Волна L + ТВ",price:"850 ₽/мес",details:"Безлимит минут, 60 ГБ, 150 ТВ-каналов, раздача интернета",
+  audience:"семья, телевизор, тв, видео, ютуб, много интернета, раздача, работа с телефона",
+  pitch:"Полный пакет: связь, интернет и ТВ в одной цене — дешевле, чем по отдельности"},
+ {id:"t4",category:"Домашний интернет",name:"Волна Дом 100",price:"500 ₽/мес",details:"100 Мбит/с, безлимитный трафик, Wi-Fi роутер в аренду",
+  audience:"домашний интернет, домой, wifi, вай-фай, роутер, проводной",
+  pitch:"Стабильные 100 Мбит для всей квартиры — фильмы и игры без тормозов"}
+];
+const DEF_OBJ=[
+ {id:"o1",trigger:"Дорого",keys:"дорого, дешевле, цена, дорогой, переплачивать",
+  answer:"Понимаю. Давайте посчитаем: сколько вы платите сейчас и что за это получаете? Часто у нас за те же деньги выходит больше гигабайт и минут. Плюс первый месяц — скидка новым абонентам."},
+ {id:"o2",trigger:"У меня уже есть оператор",keys:"уже есть, другой оператор, свой оператор, мтс, билайн, мегафон, теле2",
+  answer:"Отлично, значит вам есть с чем сравнить. Номер можно перенести к нам бесплатно за 8 дней — вы ничего не теряете, а платить будете меньше. Давайте я просто сравню ваш текущий тариф с нашим?"},
+ {id:"o3",trigger:"Мне надо подумать",keys:"подумать, подумаю, посоветуюсь, потом, перезвоню, не сейчас",
+  answer:"Конечно. Подскажите, что именно смущает — цена, условия или сомнения в покрытии? Я отвечу сейчас, чтобы вы думали уже с полной картиной. И зафиксирую для вас текущую акцию."},
+ {id:"o4",trigger:"Плохая связь / покрытие",keys:"связь, покрытие, не ловит, сигнал, плохо ловит",
+  answer:"Скажите, в каком районе вы чаще всего бываете? Я проверю карту покрытия прямо сейчас. К тому же есть тестовый период — можно проверить связь без риска."}
+];
+const DEF_SCRIPT={
+ greeting:[
+  "Добрый день! Меня зовут [имя], компания Volna. Удобно сейчас пару минут поговорить?",
+  "Здравствуйте! Это [имя] из Volna. Звоню с хорошей новостью — для вашего района действует специальное предложение по связи.",
+  "Добрый день! [Имя], оператор Volna. Подскажите, вы пользуетесь мобильной связью и домашним интернетом?"
+ ],
+ needs:[
+  "Каким оператором пользуетесь сейчас?",
+  "Сколько примерно платите за связь в месяц?",
+  "Чего чаще не хватает — минут, интернета или всё устраивает?",
+  "Интернетом больше пользуетесь дома по Wi-Fi или с телефона?",
+  "Смотрите ли ТВ / онлайн-кинотеатры? Кто ещё в семье пользуется связью?",
+  "Что для вас важнее всего: цена, объём гигабайт или качество покрытия?"
+ ],
+ present:[
+  "Смотрите, исходя из того, что вы рассказали, вам идеально подойдёт вот этот вариант…",
+  "Давайте сравню с вашим текущим тарифом: за те же деньги вы получаете больше.",
+  "Обратите внимание: сюда уже включено всё, за что вы сейчас платите отдельно."
+ ],
+ closing:[
+  "Давайте оформим заявку — это займёт две минуты, понадобится только паспорт.",
+  "Могу прямо сейчас зафиксировать за вами акционную цену. Оформляем?",
+  "Подключение бесплатное, ваш номер сохраняется. Начнём оформление?",
+  "Когда вам удобнее подключение — сегодня или завтра?"
+ ]
+};
+const STAGES=[
+ {id:"greeting",name:"Приветствие"},
+ {id:"needs",name:"Потребности"},
+ {id:"present",name:"Презентация"},
+ {id:"objections",name:"Возражения"},
+ {id:"closing",name:"Закрытие"}
+];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// ───────── хранилище ─────────
+function load(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch(e){return def;}}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+let tariffs=load("volna_tariffs",DEF_TARIFFS);
+tariffs.forEach(t=>{if(!t.category)t.category="Мобильная связь";});
+let objections=load("volna_objections",DEF_OBJ);
+let script=Object.assign(JSON.parse(JSON.stringify(DEF_SCRIPT)),load("volna_script",{}));
+let apiKey=load("volna_apikey","");
+let aiProvider=load("volna_aiprovider","gigachat");
+let localModel=load("volna_localmodel","qwen2.5:7b-instruct");
+
+// ───────── вкладки ─────────
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("act"));
+  document.querySelectorAll("section").forEach(x=>x.classList.remove("act"));
+  b.classList.add("act");$("tab-"+b.dataset.tab).classList.add("act");
+});
+
+// ───────── сценарий звонка ─────────
+let stageIdx=0;
+let usedPhrases=new Set();   // отмеченные фразы (ключ: stageId+index)
+let askedNeeds=new Set();    // отмеченные вопросы потребностей
+function renderSteps(){
+  $("steps").innerHTML="";
+  STAGES.forEach((s,i)=>{
+    const b=document.createElement("div");
+    b.className="step"+(i===stageIdx?" cur":(i<stageIdx?" done":""));
+    b.textContent=(i+1)+". "+s.name;
+    b.onclick=()=>{stageIdx=i;renderSteps();renderScenario();};
+    $("steps").appendChild(b);
+  });
+  $("stPrev").disabled=stageIdx===0;
+  $("stNext").textContent=stageIdx===STAGES.length-1?"Итог звонка ✓":"Следующий этап →";
+}
+function phraseCards(list,stageId){
+  return list.map((p,i)=>{
+    const key=stageId+"_"+i;
+    return `<div class="phrasecard${usedPhrases.has(key)?" used":""}" data-k="${key}">${esc(p)}</div>`;
+  }).join("")||'<div class="muted">Фразы не заданы — добавьте их во вкладке «Скрипт».</div>';
+}
+function renderScenario(){
+  const st=STAGES[stageIdx];const box=$("scenario");
+  if(st.id==="greeting"){
+    box.innerHTML=`<div class="lbl">Начните разговор (клик по фразе — отметить сказанной)</div>`+phraseCards(script.greeting,"greeting");
+  }else if(st.id==="needs"){
+    box.innerHTML=`<div class="lbl">Задайте вопросы — отмечайте заданные</div>`+
+      (script.needs.map((q,i)=>`<div class="qitem${askedNeeds.has(i)?" done":""}" data-q="${i}"><input type="checkbox" ${askedNeeds.has(i)?"checked":""}><span>${esc(q)}</span></div>`).join("")||'<div class="muted">Вопросы не заданы — добавьте их во вкладке «Скрипт».</div>')+
+      `<div class="muted" style="margin-top:8px;font-size:13px">Услышав потребность, суфлёр слева сам подскажет подходящий тариф.</div>`;
+  }else if(st.id==="present"){
+    box.innerHTML=`<div class="lbl">Фразы-переходы</div>`+phraseCards(script.present,"present")+
+      `<div class="lbl" style="margin-top:12px">Ваши тарифы</div>`+
+      tariffs.map(t=>`<div class="tarmini"><b>${esc(t.name)}</b><span class="price">${esc(t.price)}</span><div style="margin-top:3px"><span class="badge">${esc(t.category||"Без категории")}</span></div><div style="font-size:13px;margin-top:4px">${esc(t.details)}</div><div style="font-size:13px;color:var(--amber);margin-top:3px">💬 ${esc(t.pitch)}</div></div>`).join("")+
+      `<div class="muted" style="font-size:13px;margin-top:6px">Нужен другой тариф? Кнопка «📚 Каталог» слева — поиск и фильтры по категориям.</div>`;
+  }else if(st.id==="objections"){
+    box.innerHTML=`<div class="lbl">Клиент возражает? Нажмите — появится отработка</div><div class="chips" id="scObjChips"></div>
+      <div class="muted" style="margin-top:8px;font-size:13px">Возражения по ключевым словам ловятся автоматически на любом этапе — следите за подсказками слева.</div>`;
+    objections.forEach(o=>{
+      const b=document.createElement("button");b.className="chip";b.textContent="«"+o.trigger+"»";
+      b.onclick=()=>fireObjection(o);
+      box.querySelector("#scObjChips").appendChild(b);
+    });
+  }else if(st.id==="closing"){
+    box.innerHTML=`<div class="lbl">Подведите к сделке</div>`+phraseCards(script.closing,"closing")+
+      `<div class="muted" style="margin-top:8px;font-size:13px">После договорённости нажмите «Завершить + итог» слева.</div>`;
+  }
+  box.querySelectorAll(".phrasecard").forEach(c=>c.onclick=()=>{
+    const k=c.dataset.k;usedPhrases.has(k)?usedPhrases.delete(k):usedPhrases.add(k);c.classList.toggle("used");
+  });
+  box.querySelectorAll(".qitem").forEach(c=>c.onclick=()=>{
+    const i=+c.dataset.q;askedNeeds.has(i)?askedNeeds.delete(i):askedNeeds.add(i);renderScenario();
+  });
+}
+$("stPrev").onclick=()=>{if(stageIdx>0){stageIdx--;renderSteps();renderScenario();}};
+$("stNext").onclick=()=>{
+  if(stageIdx<STAGES.length-1){stageIdx++;renderSteps();renderScenario();}
+  else $("btnSummary").click();
+};
+function goStage(id){const i=STAGES.findIndex(s=>s.id===id);if(i>stageIdx){stageIdx=i;renderSteps();renderScenario();}}
+
+// ───────── транскрипция ─────────
+let transcript=[];
+function addLine(text,manual){
+  transcript.push({text,manual});
+  $("placeholder").style.display="none";
+  const d=document.createElement("div");d.className="m";
+  d.innerHTML=`<span class="src${manual?" man":""}">${manual?"✎":"—"}</span>${esc(text)}`;
+  $("lines").appendChild(d);
+  $("transcript").scrollTop=$("transcript").scrollHeight;
+  $("btnSummary").disabled=false;
+  localAnalyze(text);
+  scheduleAI();
+}
+
+// ───────── локальный суфлёр ─────────
+let shownObj=new Set(), shownTariff=new Set();
+function pushHint(tag,hint,phrase,tariffName){
+  $("hintsEmpty").style.display="none";
+  document.querySelectorAll("#hints .hintcard.top").forEach(c=>c.classList.remove("top"));
+  const d=document.createElement("div");d.className="hintcard top";
+  d.innerHTML=`<div class="tag">${esc(tag)}</div><div>${esc(hint)}</div>`+
+    (phrase?`<div class="phrase">«${esc(phrase)}»</div>`:"")+
+    (tariffName?`<div style="font-size:13px;color:var(--green);font-weight:700;margin-top:6px">→ Предложить: ${esc(tariffName)}</div>`:"");
+  $("hints").prepend(d);
+  const cards=$("hints").querySelectorAll(".hintcard:not(#hintsEmpty)");
+  if(cards.length>10)cards[cards.length-1].remove();
+}
+function fireObjection(o){
+  goStage("objections");
+  pushHint("Возражение: "+o.trigger,"Отработка из вашей базы:",o.answer,null);
+}
+function localAnalyze(text){
+  const low=" "+text.toLowerCase()+" ";
+  for(const o of objections){
+    const keys=(o.keys||o.trigger).split(",").map(k=>k.trim().toLowerCase()).filter(Boolean);
+    if(keys.some(k=>k&&low.includes(k))&&!shownObj.has(o.id)){
+      shownObj.add(o.id);fireObjection(o);
+    }
+  }
+  for(const t of tariffs){
+    const keys=(t.audience||"").split(",").map(k=>k.trim().toLowerCase()).filter(k=>k.length>2);
+    if(keys.some(k=>low.includes(k))&&!shownTariff.has(t.id)){
+      shownTariff.add(t.id);goStage("present");
+      pushHint("Потребность → тариф",t.name+" ("+t.price+"): "+t.details+".",t.pitch,t.name);
+    }
+  }
+}
+
+// ───────── AI-суфлёр (опционально) ─────────
+let aiBusy=false,aiTimer=null;
+const STAGE_BY_NAME={};STAGES.forEach(s=>STAGE_BY_NAME[s.name]=s.id);
+const PROVIDER_NAMES={gigachat:"GigaChat / Сбер",gemini:"Google Gemini",anthropic:"Anthropic Claude",local:"локальная нейросеть (Ollama)"};
+const aiReady=()=>aiProvider==="local"?true:!!apiKey;
+async function callAI(prompt,maxTokens){
+  if(aiProvider==="local"){
+    let r;
+    try{
+      r=await fetch("http://localhost:11434/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:localModel||"qwen2.5:7b-instruct",messages:[{role:"user",content:prompt}],stream:false,options:{num_predict:maxTokens||600}})});
+    }catch(e){throw new Error("Ollama не отвечает. Проверьте, что она запущена и выполнена команда setx OLLAMA_ORIGINS \"*\" (вкладка «AI-режим», шаг 3).");}
+    const data=await r.json();
+    if(data.error)throw new Error(data.error);
+    return (data.message?.content||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim();
+  }
+  if(aiProvider==="gigachat"){
+    const r=await fetch("/api/gigachat",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({authKey:apiKey,prompt:prompt,maxTokens:maxTokens||600})});
+    const data=await r.json();
+    if(data.error)throw new Error(data.error);
+    return data.text||"";
+  }
+  if(aiProvider==="gemini"){
+    const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key="+encodeURIComponent(apiKey),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxTokens||600}})});
+    const data=await r.json();
+    if(data.error)throw new Error(data.error.message||"Ошибка Gemini");
+    return ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+  }
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:maxTokens||600,messages:[{role:"user",content:prompt}]})});
+  const data=await r.json();
+  if(data.error)throw new Error(data.error.message||"Ошибка Anthropic");
+  return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+}
+function extractJson(txt){
+  try{const a=txt.indexOf("{"),b=txt.lastIndexOf("}");if(a<0||b<=a)return null;return JSON.parse(txt.slice(a,b+1));}catch(e){return null;}
+}
+async function aiHint(manual){
+  if(!aiReady()||aiBusy)return;
+  aiBusy=true;$("thinking").style.display="inline";
+  try{
+    const prompt=`Ты — суфлёр менеджера по продажам оператора связи "Volna". Дай ОДНУ короткую практичную подсказку, что менеджеру сказать дальше. Держись скрипта менеджера, но адаптируй под клиента.
+ТАРИФЫ (предлагай только из списка): ${tariffs.map(t=>`[${t.category||"Без категории"}] ${t.name} — ${t.price}. ${t.details}. Для кого: ${t.audience}`).join(" | ")}
+ОТРАБОТКА ВОЗРАЖЕНИЙ: ${objections.map(o=>`"${o.trigger}" → ${o.answer}`).join(" | ")}
+СКРИПТ МЕНЕДЖЕРА — приветствие: ${script.greeting.join(" / ")} || вопросы о потребностях: ${script.needs.join(" / ")} || переходы к презентации: ${script.present.join(" / ")} || закрытие: ${script.closing.join(" / ")}
+ТЕКУЩИЙ ЭТАП: ${STAGES[stageIdx].name}. Этапы: Приветствие, Потребности, Презентация, Возражения, Закрытие.
+ДИАЛОГ (последние реплики, без разделения говорящих): ${transcript.slice(-14).map(l=>l.text).join(" / ")||"(диалог только начался)"}
+Ответь ТОЛЬКО валидным JSON без пояснений и без markdown: {"stage":"текущий этап из списка","hint":"совет менеджеру, 1-2 предложения","phrase":"готовая фраза, которую можно сказать клиенту прямо сейчас","tariff":"название подходящего тарифа или null"}`;
+    const txt=await callAI(prompt,600);
+    const j=extractJson(txt);
+    if(j&&(j.hint||j.phrase)){
+      if(j.stage&&STAGE_BY_NAME[j.stage])goStage(STAGE_BY_NAME[j.stage]);
+      pushHint("AI • "+(j.stage||STAGES[stageIdx].name),j.hint||"",j.phrase||"",(j.tariff&&j.tariff!=="null")?j.tariff:null);
+    }else if(txt&&txt.trim()){
+      pushHint("AI • подсказка",txt.trim().slice(0,400),"",null);
+    }
+  }catch(e){
+    if(manual)pushHint("AI • ошибка","Не удалось получить подсказку: "+String(e.message||e).slice(0,160)+". Проверьте ключ во вкладке «AI-режим».","",null);
+    else console.error("AI hint error",e);
+  }
+  finally{aiBusy=false;$("thinking").style.display="none";}
+}
+function scheduleAI(){
+  if(!aiReady()||!$("autoHints").checked)return;
+  clearTimeout(aiTimer);aiTimer=setTimeout(()=>aiHint(false),4000);
+}
+$("btnAIHint").onclick=()=>{ if(!aiReady()){pushHint("AI выключен","Чтобы получать умные подсказки, подключите бесплатный AI во вкладке «AI-режим» (инструкции там же: GigaChat или локальная нейросеть).","",null);return;} aiHint(true); };
+function keyStatus(){
+  $("keyStatus").textContent=aiReady()
+    ?("AI-режим включён ✓ Провайдер: "+PROVIDER_NAMES[aiProvider]+(aiProvider==="local"?(", модель "+(localModel||"qwen2.5:7b-instruct")+". Ollama должна быть запущена на этом ПК."):"."))
+    :"AI-режим выключен — работает локальный суфлёр по ключевым словам (бесплатно и без лимитов).";
+  $("localModel").style.display=aiProvider==="local"?"":"none";
+  $("apiKey").style.display=aiProvider==="local"?"none":"";
+}
+$("apiKey").value=apiKey;$("aiProvider").value=aiProvider;$("localModel").value=localModel;
+$("aiProvider").onchange=()=>{aiProvider=$("aiProvider").value;save("volna_aiprovider",aiProvider);keyStatus();};
+$("keySave").onclick=()=>{apiKey=$("apiKey").value.trim();aiProvider=$("aiProvider").value;
+  localModel=$("localModel").value.trim()||"qwen2.5:7b-instruct";
+  save("volna_apikey",apiKey);save("volna_aiprovider",aiProvider);save("volna_localmodel",localModel);keyStatus();};
+$("keyClear").onclick=()=>{apiKey="";$("apiKey").value="";save("volna_apikey","");keyStatus();};
+keyStatus();
+
+// ───────── распознавание речи ─────────
+let rec=null,active=false,micStream=null;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$("btnStart").onclick=()=>{ active?stopRec():startRec(); };
+async function startRec(){
+  $("micErr").style.display="none";
+  if(!SR){showErr("Браузер не поддерживает распознавание речи. Используйте Google Chrome; ручной ввод и сценарий работают всегда.");return;}
+  if(!micStream){
+    try{ micStream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+    catch(e){ showErr("Нет доступа к микрофону. Разрешите доступ во всплывающем окне Chrome и нажмите «Начать звонок» ещё раз."); return; }
+  }
+  rec=new SR();rec.lang="ru-RU";rec.continuous=true;rec.interimResults=true;
+  rec.onresult=e=>{
+    let inter="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal){const t=r[0].transcript.trim();if(t)addLine(t,false);}
+      else inter+=r[0].transcript;
+    }
+    $("interim").textContent=inter?inter+"…":"";
+  };
+  rec.onerror=e=>{
+    if(e.error==="not-allowed"){showErr("Нет доступа к микрофону. Нажмите на значок 🔒/⚙ слева от адреса, разрешите микрофон и обновите страницу.");setInactive();}
+    else if(e.error==="audio-capture"){showErr("Микрофон не найден. Проверьте, что CABLE Output или ваш микрофон выбран в системе.");setInactive();}
+  };
+  rec.onend=()=>{ if(active){try{rec.start();}catch(e){}} };
+  try{rec.start();active=true;$("btnStart").textContent="⏸ Пауза";$("btnStart").classList.add("red");$("wave").classList.add("on");}
+  catch(e){showErr("Не удалось запустить распознавание. Обновите страницу.");}
+}
+function stopRec(){active=false;$("interim").textContent="";if(rec)try{rec.stop();}catch(e){} setInactive();}
+function setInactive(){active=false;$("btnStart").textContent="▶ Начать звонок";$("btnStart").classList.remove("red");$("wave").classList.remove("on");}
+function showErr(t){$("micErr").textContent=t;$("micErr").style.display="block";}
+
+// ───────── ручной ввод, чипы, итог, новый звонок ─────────
+$("btnManual").onclick=()=>{const t=$("manualIn").value.trim();if(!t)return;addLine(t,true);$("manualIn").value="";};
+$("manualIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("btnManual").click();});
+function renderChips(){
+  $("objChips").innerHTML="";
+  objections.forEach(o=>{
+    const b=document.createElement("button");b.className="chip";b.textContent="«"+o.trigger+"»";
+    b.onclick=()=>fireObjection(o);
+    $("objChips").appendChild(b);
+  });
+}
+$("btnNew").onclick=()=>{stopRec();transcript=[];shownObj.clear();shownTariff.clear();
+  usedPhrases.clear();askedNeeds.clear();stageIdx=0;renderSteps();renderScenario();
+  $("lines").innerHTML="";$("interim").textContent="";$("placeholder").style.display="block";
+  $("hints").querySelectorAll(".hintcard:not(#hintsEmpty)").forEach(c=>c.remove());$("hintsEmpty").style.display="block";
+  $("summaryBox").style.display="none";$("btnSummary").disabled=true;};
+$("btnSummary").onclick=async()=>{
+  stopRec();
+  const box=$("summaryBox");box.style.display="block";
+  const objHits=objections.filter(o=>shownObj.has(o.id)).map(o=>o.trigger).join(", ")||"не зафиксированы";
+  const tHits=tariffs.filter(t=>shownTariff.has(t.id)).map(t=>t.name).join(", ")||"не подобран";
+  const asked=askedNeeds.size+" из "+script.needs.length;
+  const reached=STAGES[stageIdx].name;
+  box.innerHTML=`<div class="lbl">Итог звонка</div>
+    <div><b>Дошли до этапа:</b> ${esc(reached)}</div>
+    <div><b>Вопросов о потребностях задано:</b> ${esc(asked)}</div>
+    <div><b>Прозвучавшие возражения:</b> ${esc(objHits)}</div>
+    <div><b>Подобранные тарифы:</b> ${esc(tHits)}</div>
+    <div><b>Реплик в транскрипции:</b> ${transcript.length}</div>
+    <div id="aiSummary"></div>`;
+  if(aiReady()&&transcript.length){
+    $("aiSummary").innerHTML='<div class="muted" style="margin-top:8px">AI-разбор: анализирую…</div>';
+    try{
+      const prompt=`Ты — тренер отдела продаж оператора связи "Volna". Транскрипция звонка менеджера с клиентом (без разделения говорящих):
+${transcript.map(l=>"— "+l.text).join("\n")}
+Тарифы Volna: ${tariffs.map(t=>t.name+" ("+t.price+")").join(", ")}.
+Ответь ТОЛЬКО валидным JSON без markdown: {"needs":"потребности клиента","offered":"что было предложено","result":"итог и договорённости","improve":"1-2 конкретных совета менеджеру","nextTariff":"тариф для следующего контакта или null"}`;
+      const j=extractJson(await callAI(prompt,800));
+      if(j){$("aiSummary").innerHTML=`<div class="lbl" style="margin-top:12px">AI-разбор</div>
+        <div><b>Потребности:</b> ${esc(j.needs||"—")}</div>
+        <div><b>Предложено:</b> ${esc(j.offered||"—")}</div>
+        <div><b>Итог:</b> ${esc(j.result||"—")}</div>
+        <div><b style="color:var(--amber)">Что улучшить:</b> ${esc(j.improve||"—")}</div>`+
+        ((j.nextTariff&&j.nextTariff!=="null")?`<div><b style="color:var(--green)">Тариф на следующий контакт:</b> ${esc(j.nextTariff)}</div>`:"");}
+      else $("aiSummary").innerHTML='<div class="muted" style="margin-top:8px">AI-разбор не получился — нажмите «Завершить + итог» ещё раз.</div>';
+    }catch(e){$("aiSummary").innerHTML='<div class="muted" style="margin-top:8px">AI-разбор недоступен: '+esc(String(e.message||e).slice(0,160))+'</div>';}
+  }
+};
+
+// ───────── редактор скрипта ─────────
+const SCRIPT_FIELDS=[["greeting","sc_greeting","sv_greeting"],["needs","sc_needs","sv_needs"],
+  ["present","sc_present","sv_present"],["closing","sc_closing","sv_closing"]];
+function fillScriptForm(){SCRIPT_FIELDS.forEach(([k,inp])=>{$(inp).value=(script[k]||[]).join("\n");});}
+let svTimers={};
+SCRIPT_FIELDS.forEach(([k,inp,sv])=>{
+  $(inp).addEventListener("input",()=>{
+    script[k]=$(inp).value.split("\n").map(s=>s.trim()).filter(Boolean);
+    save("volna_script",script);renderScenario();
+    $(sv).classList.add("show");clearTimeout(svTimers[k]);
+    svTimers[k]=setTimeout(()=>$(sv).classList.remove("show"),1200);
+  });
+});
+$("scriptReset").onclick=()=>{
+  script=JSON.parse(JSON.stringify(DEF_SCRIPT));save("volna_script",script);
+  fillScriptForm();renderScenario();
+};
+
+// ───────── каталог тарифов: фильтры, поиск, сортировка ─────────
+let catFilter="Все",catSearch="",catSort="none";
+function tariffCategories(){return [...new Set(tariffs.map(t=>t.category||"Без категории"))];}
+function priceNum(p){const m=String(p).replace(/[\s\u00A0]/g,"").match(/\d+/);return m?+m[0]:1e9;}
+function filteredTariffs(){
+  let list=tariffs.filter(t=>{
+    const cat=t.category||"Без категории";
+    if(catFilter!=="Все"&&cat!==catFilter)return false;
+    if(catSearch){
+      const hay=(t.name+" "+t.price+" "+t.details+" "+t.audience+" "+t.pitch+" "+cat).toLowerCase();
+      if(!hay.includes(catSearch))return false;
+    }
+    return true;
+  });
+  if(catSort==="asc")list=[...list].sort((a,b)=>priceNum(a.price)-priceNum(b.price));
+  if(catSort==="desc")list=[...list].sort((a,b)=>priceNum(b.price)-priceNum(a.price));
+  return list;
+}
+function renderCatBar(barId){
+  const cats=tariffCategories();
+  if(catFilter!=="Все"&&!cats.includes(catFilter))catFilter="Все";
+  const bar=$(barId);bar.innerHTML="";
+  ["Все",...cats].forEach(c=>{
+    const b=document.createElement("button");b.className="chip"+(catFilter===c?" on":"");b.textContent=c;
+    b.onclick=()=>{catFilter=c;refreshCatalogs();};
+    bar.appendChild(b);
+  });
+}
+function renderCatalogModal(){
+  renderCatBar("cmBar");
+  const list=filteredTariffs();
+  $("cmList").innerHTML=list.length?"":'<div class="muted">Ничего не найдено — измените фильтр или запрос.</div>';
+  list.forEach(t=>{
+    const d=document.createElement("div");d.className="tarmini";
+    d.innerHTML=`<b>${esc(t.name)}</b><span class="price">${esc(t.price)}</span>
+      <div style="margin-top:3px"><span class="badge">${esc(t.category||"Без категории")}</span></div>
+      <div style="font-size:13px;margin-top:4px">${esc(t.details)}</div>
+      <div style="font-size:13px;color:var(--amber);margin-top:3px">💬 ${esc(t.pitch)}</div>`;
+    $("cmList").appendChild(d);
+  });
+}
+function refreshCatalogs(){
+  renderTariffs();
+  if($("catModal").classList.contains("open"))renderCatalogModal();
+}
+$("btnCatalog").onclick=()=>{$("cmSearch").value=catSearch;$("cmSort").value=catSort;renderCatalogModal();$("catModal").classList.add("open");};
+$("cmClose").onclick=()=>$("catModal").classList.remove("open");
+$("catModal").addEventListener("click",e=>{if(e.target.id==="catModal")$("catModal").classList.remove("open");});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("catModal").classList.remove("open");});
+[["ctSearch","cmSearch"],["cmSearch","ctSearch"]].forEach(([a,b])=>$(a).addEventListener("input",e=>{
+  catSearch=e.target.value.trim().toLowerCase();$(b).value=e.target.value;refreshCatalogs();}));
+[["ctSort","cmSort"],["cmSort","ctSort"]].forEach(([a,b])=>$(a).addEventListener("change",e=>{
+  catSort=e.target.value;$(b).value=catSort;refreshCatalogs();}));
+
+// ───────── экспорт / импорт настроек ─────────
+$("btnExport").onclick=()=>{
+  const data={app:"volna-sales-assistant",version:2,exported:new Date().toISOString(),
+    tariffs:tariffs,objections:objections,script:script,aiProvider:aiProvider,localModel:localModel};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="volna-backup-"+new Date().toISOString().slice(0,10)+".json";
+  a.click();URL.revokeObjectURL(a.href);
+};
+$("btnImport").onclick=()=>$("importFile").click();
+$("importFile").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(!d||d.app!=="volna-sales-assistant")throw new Error("это не файл резервной копии Volna Sales Assistant");
+      if(!confirm("Заменить текущие тарифы, возражения и скрипт данными из файла?"))return;
+      if(Array.isArray(d.tariffs))tariffs=d.tariffs;
+      if(Array.isArray(d.objections))objections=d.objections;
+      if(d.script)script=Object.assign(JSON.parse(JSON.stringify(DEF_SCRIPT)),d.script);
+      tariffs.forEach(t=>{if(!t.category)t.category="Мобильная связь";});
+      save("volna_tariffs",tariffs);save("volna_objections",objections);save("volna_script",script);
+      catFilter="Все";refreshCatalogs();renderObjs();fillScriptForm();renderScenario();
+      alert("Настройки восстановлены ✓");
+    }catch(err){alert("Не удалось прочитать файл: "+err.message);}
+    e.target.value="";
+  };
+  rd.readAsText(f);
+});
+
+// ───────── редакторы тарифов и возражений ─────────
+let tariffEdit=null,objEdit=null;
+function renderTariffs(){
+  save("volna_tariffs",tariffs);
+  renderCatBar("ctBar");
+  $("catList").innerHTML=tariffCategories().map(c=>`<option value="${esc(c)}">`).join("");
+  const list=filteredTariffs();
+  $("tariffList").innerHTML=tariffs.length?(list.length?"":'<div class="muted">Ничего не найдено — измените фильтр или запрос.</div>'):'<div class="muted">Список пуст — добавьте тариф справа.</div>';
+  list.forEach(t=>{
+    const d=document.createElement("div");d.className="card";
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:4px"><b style="font-size:16px">${esc(t.name)}</b><span class="price">${esc(t.price)}</span></div>
+      <div style="margin-bottom:6px"><span class="badge">${esc(t.category||"Без категории")}</span></div>
+      <div style="font-size:13px;line-height:1.5">${esc(t.details)}</div>
+      <div style="font-size:13px" class="muted">Ключевые слова: ${esc(t.audience)}</div>
+      <div style="font-size:13px;color:var(--amber);margin-top:4px">💬 ${esc(t.pitch)}</div>
+      <div class="row" style="margin:10px 0 0"><button class="btn sm ghost" data-a="e">Изменить</button><button class="btn sm ghost" data-a="d">Удалить</button></div>`;
+    d.querySelector('[data-a="e"]').onclick=()=>{tariffEdit=t.id;
+      $("tf_category").value=t.category||"";$("tf_name").value=t.name;$("tf_price").value=t.price;$("tf_details").value=t.details;
+      $("tf_audience").value=t.audience;$("tf_pitch").value=t.pitch;
+      $("tariffFormTitle").textContent="Изменить тариф";$("tariffSave").textContent="Сохранить";$("tariffCancel").style.display="inline-block";};
+    d.querySelector('[data-a="d"]').onclick=()=>{tariffs=tariffs.filter(x=>x.id!==t.id);refreshCatalogs();renderScenario();};
+    $("tariffList").appendChild(d);
+  });
+}
+$("tariffSave").onclick=()=>{
+  const v={category:$("tf_category").value.trim()||"Без категории",name:$("tf_name").value.trim(),price:$("tf_price").value.trim(),
+    details:$("tf_details").value.trim(),audience:$("tf_audience").value.trim(),pitch:$("tf_pitch").value.trim()};
+  if(!v.name)return;
+  if(tariffEdit){tariffs=tariffs.map(t=>t.id===tariffEdit?{...v,id:tariffEdit}:t);}else{tariffs.push({...v,id:uid()});}
+  tariffCancelFn();refreshCatalogs();renderScenario();
+};
+function tariffCancelFn(){tariffEdit=null;["tf_category","tf_name","tf_price","tf_details","tf_audience","tf_pitch"].forEach(i=>$(i).value="");
+  $("tariffFormTitle").textContent="Добавить тариф";$("tariffSave").textContent="Добавить";$("tariffCancel").style.display="none";}
+$("tariffCancel").onclick=tariffCancelFn;
+
+function renderObjs(){
+  save("volna_objections",objections);renderChips();
+  if(STAGES[stageIdx].id==="objections")renderScenario();
+  $("objList").innerHTML=objections.length?"":'<div class="muted">Список пуст — добавьте возражение справа.</div>';
+  objections.forEach(o=>{
+    const d=document.createElement("div");d.className="card";
+    d.innerHTML=`<b style="font-size:15px">«${esc(o.trigger)}»</b>
+      <div class="muted" style="font-size:12px;margin-top:4px">Ключевые слова: ${esc(o.keys||"")}</div>
+      <div style="font-size:13px;line-height:1.55;margin-top:6px">${esc(o.answer)}</div>
+      <div class="row" style="margin:10px 0 0"><button class="btn sm ghost" data-a="e">Изменить</button><button class="btn sm ghost" data-a="d">Удалить</button></div>`;
+    d.querySelector('[data-a="e"]').onclick=()=>{objEdit=o.id;
+      $("of_trigger").value=o.trigger;$("of_keys").value=o.keys||"";$("of_answer").value=o.answer;
+      $("objFormTitle").textContent="Изменить возражение";$("objSave").textContent="Сохранить";$("objCancel").style.display="inline-block";};
+    d.querySelector('[data-a="d"]').onclick=()=>{objections=objections.filter(x=>x.id!==o.id);renderObjs();};
+    $("objList").appendChild(d);
+  });
+}
+$("objSave").onclick=()=>{
+  const v={trigger:$("of_trigger").value.trim(),keys:$("of_keys").value.trim(),answer:$("of_answer").value.trim()};
+  if(!v.trigger)return;
+  if(objEdit){objections=objections.map(o=>o.id===objEdit?{...v,id:objEdit}:o);}else{objections.push({...v,id:uid()});}
+  objCancelFn();renderObjs();
+};
+function objCancelFn(){objEdit=null;["of_trigger","of_keys","of_answer"].forEach(i=>$(i).value="");
+  $("objFormTitle").textContent="Добавить возражение";$("objSave").textContent="Добавить";$("objCancel").style.display="none";}
+$("objCancel").onclick=objCancelFn;
+
+// освобождаем микрофон при закрытии страницы
+window.addEventListener("beforeunload",()=>{if(micStream)micStream.getTracks().forEach(t=>t.stop());});
+
+// init
+renderTariffs();renderObjs();fillScriptForm();renderSteps();renderScenario();
+</script>
+</body>
+</html>
